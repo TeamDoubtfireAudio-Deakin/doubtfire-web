@@ -1,6 +1,6 @@
 angular.module("doubtfire.common.services.tasks", [])
 
-.factory("taskService", (TaskFeedback, TaskComment, Task, TaskDefinition, alertService, $rootScope, analyticsService, GradeTaskModal, gradeService, ConfirmationModal, ProgressModal) ->
+.factory("taskService", (TaskFeedback, TaskComment, Task, TaskDefinition, alertService, $filter, $rootScope, analyticsService, GradeTaskModal, gradeService, ConfirmationModal, ProgressModal, UploadSubmissionModal, currentUser, groupService) ->
   #
   # The unit service object
   #
@@ -49,6 +49,35 @@ angular.module("doubtfire.common.services.tasks", [])
     'complete'
   ]
 
+  taskService.terminalStatuses = [
+    'demonstrate'
+    'discuss'
+    'do_not_resubmit'
+    'complete'
+    'fail'
+  ]
+
+  taskService.pdfRegeneratableStatuses = [
+    'demonstrate'
+    'ready_to_mark'
+    'discuss'
+    'complete'
+  ]
+
+  taskService.submittableStatuses = [
+    'ready_to_mark'
+    'need_help'
+  ]
+
+  taskService.markedStatuses = [
+    'redo'
+    'fail'
+    'fix_and_resubmit'
+    'do_not_resubmit'
+    'discuss'
+    'demonstrate'
+    'complete'
+  ]
 
   taskService.acronymKey =
     RTM: 'ready_to_mark'
@@ -90,12 +119,12 @@ angular.module("doubtfire.common.services.tasks", [])
     fail:               'FAL'
 
   taskService.statusLabels =
-    ready_to_mark:      'Ready to Mark'
+    ready_to_mark:      'Ready for Feedback'
     not_started:        'Not Started'
     working_on_it:      'Working On It'
     need_help:          'Need Help'
     redo:               'Redo'
-    do_not_resubmit:    "Don't Resubmit"
+    do_not_resubmit:    'Feedback Exceeded'
     fix_and_resubmit:   'Resubmit'
     discuss:            'Discuss'
     demonstrate:        'Demonstrate'
@@ -108,7 +137,7 @@ angular.module("doubtfire.common.services.tasks", [])
     working_on_it:      'fa fa-bolt'
     need_help:          'fa fa-question-circle'
     redo:               'fa fa-refresh'
-    do_not_resubmit:    'fa fa-book'
+    do_not_resubmit:    'fa fa-low-vision'
     fix_and_resubmit:   'fa fa-wrench'
     discuss:            'fa fa-commenting'
     demonstrate:        'fa fa-commenting'
@@ -142,29 +171,54 @@ angular.module("doubtfire.common.services.tasks", [])
     demonstrate:       10
     complete:          11
 
-  taskService.helpTextDesc =
+  taskService.helpDescriptions =
+    # detail = in a brief context to the student
+    # reason = reason for this status
+    # action = action student can take
     ready_to_mark:
-      'You have completed the Task, and uploaded it for your tutor to assess.'
+      detail: "Submitted this task for feedback"
+      reason: "You have finished working on the task and have uploaded it for your tutor to assess."
+      action: "No further action is required. Your tutor will change this task status once they have assessed it."
     not_started:
-      'You have not yet started the Task.'
+      detail: "Task not started"
+      reason: "You have not yet started the Task."
+      action: "Depending on when the target date is, you should start this task soon."
     working_on_it:
-      'You are working on the task, but it is not yet ready to assess.'
+      detail: "Working on the task"
+      reason: "You are working on the task, but it is not yet ready to assess."
+      action: "Finish working on this task and then set it to ready for feedback."
     need_help:
-      'You are working on the task but would like some help to get it complete.'
+      detail: "Need help for the task"
+      reason: "You are working on the task but would like some help to get it complete."
+      action: "Upload the task with what you have completed so far and add a comment on what you would like help on."
     redo:
-      'Your tutor wants you to start this task from scratch.'
+      detail: "Start this task from scratch"
+      reason: "You appeared to have misunderstood what is required for this task, many deliverables were missing or the marking criteria was largely not met."
+      action: "You should reconsider your approach to this task. Review the task resources and task guide instructions. Check the deliverables carefully. Consider getting help from your tutor and/or lecturer."
     do_not_resubmit:
-      'Your tutor wants you to stop submitting this task and include it fixed in your portfolio.'
+      detail: "Feedback will no longer be given"
+      reason: "This work is not complete to an acceptable standard and your tutor will not reassess it again."
+      action: "It is now your responsibility to ensure this task is at an adequate standard in your portfolio. You should fix your work according to your tutor's prior feedback and include a corrected version in your portfolio. This task will not be considered to be Complete."
     fix_and_resubmit:
-      'Your tutor wants you to fix something and resubmit it for review again.'
+      detail: "Your submission requires some more work"
+      reason: "It looks like your work is on the right track, but it does require some extra work to achieve the required standard."
+      action: "Review your submission and the feedback from your tutor. Fix the issues identified, and resubmit it to be reassessed. Make sure to check your submission thoroughly, and note any limit on the number of times each task can be reassessed."
     discuss:
-      'Your tutor is happy with your work. To mark as complete, attend class and discuss it with your tutor.'
+      detail: "You're almost complete!"
+      reason: "Your work looks good and your tutor believes it is complete."
+      action: "To mark as complete, attend class and discuss it with your tutor."
     demonstrate:
-      'Your work looks good. Attend class and demonstrate the task to your tutor to have it marked as Complete.'
+      detail: "You're almost complete!"
+      reason: "Your work looks good and your tutor believes it is complete."
+      action: "To mark as complete, attend class and demonstrate how your submission works to your tutor."
     complete:
-      'Your tutor is happy with your work and it has been discussed with them.'
+      detail: "You are finished with this task 🎉"
+      reason: "Your tutor is happy with your work and it has been discussed with them."
+      action: "No further action required. Move onto the next task, or go party if everything is done."
     fail:
-      'You have not successfully demonstrated the required learning for this task.'
+      detail: "You have failed this task"
+      reason: "You have not successfully demonstrated the required learning for this task. This may be due to plagiarism detection or assessment under testing conditions."
+      action: "You should discuss this with your tutor and/or the convenor."
 
   # Statuses students/tutors can switch tasks to
   taskService.switchableStates =
@@ -184,6 +238,19 @@ angular.module("doubtfire.common.services.tasks", [])
       'fail'
     ]
 
+  taskService.rejectFutureStates =
+      not_started: []
+      working_on_it: []
+      need_help: []
+      ready_to_mark: []
+      complete: ['ready_to_mark', 'not_started', 'working_on_it', 'need_help']
+      discuss:  ['ready_to_mark', 'not_started', 'working_on_it', 'need_help']
+      demonstrate:  ['ready_to_mark', 'not_started', 'working_on_it', 'need_help']
+      fix_and_resubmit:  []
+      redo:  []
+      do_not_resubmit:  ['ready_to_mark', 'not_started', 'working_on_it', 'need_help']
+      fail:  ['ready_to_mark', 'not_started', 'working_on_it', 'need_help']
+
   # This function gets the status CSS class for the indicated status
   taskService.statusClass = (status) -> _.trim(_.dasherize(status))
 
@@ -191,37 +258,90 @@ angular.module("doubtfire.common.services.tasks", [])
   taskService.statusText = (status) -> taskService.statusLabels[status]
 
   # This function gets the help text for the indicated status
-  taskService.helpText = (status) -> taskService.helpTextDesc[status]
+  taskService.helpDescription = (status) -> taskService.helpDescriptions[status]
 
   taskService.taskDefinitionFn = (unit) ->
     (task) ->
       unit.taskDef(task.task_definition_id)
 
   # Return an icon and label for the task
-  taskService.statusData = (task) ->
+  taskService.statusData = (data) ->
+    # provided a task not a status
+    status = if data.status? then data.status else data
     {
-      icon: taskService.statusIcons[task.status]
-      label: taskService.statusLabels[task.status]
-      class: taskService.statusClass(task.status)
-      helpText: taskService.helpText(task.status)
+      status: status
+      icon: taskService.statusIcons[status]
+      label: taskService.statusLabels[status]
+      class: taskService.statusClass(status)
+      help: taskService.helpDescription(status)
     }
 
-  # Return number of days task is overdue, or false if not overdue
-  taskService.daysFromTarget = (task) ->
-    dueDate = new Date(task.definition.target_date)
-    now = new Date()
-    diffTime = now.getTime() - dueDate.getTime()
-    diffDays = Math.floor(diffTime / (1000 * 3600 * 24))
-    diffDays
+  # Return whether task is a group task
+  taskService.isGroupTask = (task) ->
+    groupService.isGroupTask(task)
 
+  # Returns the alignments for this task
+  taskService.staffAlignmentsForTask = (task) ->
+    task.unit().staffAlignmentsForTaskDefinition(task.definition)
 
-  # Return number of days task is overdue, or false if not overdue
-  taskService.daysOverdue = (task) ->
+  # Return number of days until task hits target date, or false if already
+  # completed
+  taskService.daysUntilTargetDate = (task) ->
     return false if task.status == 'complete'
-    diffDays = taskService.daysFromTarget(task)
-    return false if diffDays <= 0
+    moment(task.definition.target_date).diff(moment(), 'days')
+
+  # Return number of days until task is due, or false if already completed
+  taskService.daysUntilDueDate = (task) ->
+    return false if !task.definition.due_date? || task.status == 'complete'
+    moment(task.definition.due_date).diff(moment(), 'days')
+
+  # Return number of days task is overdue from target, or false if not
+  taskService.daysPastTargetDate = (task) ->
+    return false if task.status == 'complete'
+    diffDays = moment().diff(moment(task.definition.target_date), 'days')
+    return false if !diffDays? || diffDays <= 0
     diffDays
 
+  # Return number of days task is overdue, or false if not overdue
+  taskService.daysPastDueDate = (task) ->
+    return false if task.status == 'complete' || !task.definition.due_date?
+    diffDays = moment().diff(moment(task.definition.due_date), 'days')
+    return false if !diffDays? || diffDays <= 0
+    diffDays
+
+  # Trigger for new status
+  taskService.triggerTransition = (task, status, unitRole) ->
+    throw Error "Not a valid status key" unless _.includes(taskService.statusKeys, status)
+    return if task.status == status
+    requiresFileUpload = _.includes(['ready_to_mark', 'need_help'], status) && task.definition.upload_requirements.length > 0
+    if requiresFileUpload
+      taskService.presentTaskSubmissionModal(task, status)
+    else
+      taskService.updateTaskStatus(task.unit(), task.project(), task, status)
+      asUser = if unitRole? then unitRole.role else 'Student'
+      analyticsService.event('Task Service', "Updated Status as #{asUser}", taskService.statusLabels[status])
+
+  taskService.presentTaskSubmissionModal = (task, status, reuploadEvidence) ->
+    oldStatus = task.status
+    task.status = status
+    modal = UploadSubmissionModal.show(task, reuploadEvidence)
+    # Modal failed to present
+    unless modal?
+      task.status = oldStatus
+      return
+    modal.result.then(
+      # Grade was selected (modal closed with result)
+      (response) ->
+        null
+      # Grade was not selected (modal was dismissed)
+      (dismissed) ->
+        task.status = oldStatus
+        alertService.add("info", "Submission cancelled. Status was reverted.", 6000)
+    )
+
+  # Whether or not new submissions can be made on a task
+  taskService.canReuploadEvidence = (task) ->
+    _.includes(taskService.terminalStatuses, task.status)
 
   doDeleteTask = (task, unit, callback = null) ->
     TaskDefinition.delete( { id: task.id }).$promise.then (
@@ -243,15 +363,18 @@ angular.module("doubtfire.common.services.tasks", [])
   taskService.deleteTask = (task, unit, callback = null) ->
     ConfirmationModal.show "Delete Task #{task.abbreviation}",
       'Are you sure you want to delete this task? This action is final and will delete student work associated with this task.',
-      () ->
+      ->
         promise = doDeleteTask task, unit, null
         ProgressModal.show "Deleting Task #{task.abbreviation}", 'Please wait while student projects are updated.', promise
+
+  taskService.plagiarismDetected = (task) ->
+    task.similar_to_count - task.similar_to_dismissed_count > 0
 
   taskService.indexOf = (status) ->
     _.indexOf(taskService.statusKeys, status)
 
   # Return a list of all the the status values and icons
-  taskService.allStatusData = () ->
+  taskService.allStatusData = ->
     result = []
     angular.forEach taskService.statusKeys, (sk) ->
       result.push({ icon: taskService.statusIcons[sk], label: taskService.statusLabels[sk], class: taskService.statusClass(sk) })
@@ -265,13 +388,9 @@ angular.module("doubtfire.common.services.tasks", [])
     task.updateTaskStatus project, response.new_stats
     task.processing_pdf = response.processing_pdf
     task.grade = response.grade
-
     if response.status == status
-      $rootScope.$broadcast('UpdateAlignmentChart')
-      if project.updateBurndownChart?
-        project.updateBurndownChart()
+      project.updateBurndownChart?()
       alertService.add("success", "Status saved.", 2000)
-      $rootScope.$broadcast('TaskStatusUpdated', { status: response.status })
       if response.other_projects?
         _.each response.other_projects, (details) ->
           proj = unit.findStudent(details.id)
@@ -287,36 +406,39 @@ angular.module("doubtfire.common.services.tasks", [])
       alertService.add("info", "Status change was not changed.", 4000)
 
 
-  taskService.updateTaskStatus = (unit, project, task, status) ->
+  taskService.updateTaskStatus = (unit, project, task, status, success, failure) ->
     oldStatus = task.status
     updateFunc = ->
-      Task.update { project_id: project.project_id, task_definition_id: task.definition.id, trigger: status, grade: task.grade },
+      Task.update { project_id: project.project_id, task_definition_id: task.definition.id, trigger: status, grade: task.grade, quality_pts: task.quality_pts },
         # Success
         (value) ->
           taskService.processTaskStatusChange unit, project, task, status, value
           analyticsService.event 'Task Service', 'Updated Task Status', status
           analyticsService.event 'Task Service', 'Updated Task Grade', gradeService.grades[value.grade]
+          success?()
         # Fail
         (value) ->
           task.status = oldStatus
           alertService.add("danger", value.data.error, 6000)
           analyticsService.event 'Task Service', 'Failed to Update Task Status', status
+          failure?()
     # Must provide grade if graded and in a final complete state
-    if task.definition.is_graded and status in taskService.gradeableStatuses
-      GradeTaskModal.show(task).result.then(
+    if (task.definition.is_graded or task.definition.max_quality_pts > 0) and status in taskService.gradeableStatuses
+      GradeTaskModal.show(task)?.result.then(
         # Grade was selected (modal closed with result)
-        (selectedGrade) ->
-          task.grade = selectedGrade
+        (response) ->
+          task.grade = response.selectedGrade
+          task.quality_pts = response.qualityPts
           updateFunc()
         # Grade was not selected (modal was dismissed)
-        () ->
+        ->
           task.status = oldStatus
           alertService.add "info", "No grade was specified to a graded task - status reverted", 6000
       )
     else
       updateFunc()
 
-  taskService.recreatePDF = (task, success) ->
+  taskService.recreateSubmissionPdf = (task, onSuccess, onFailure) ->
     TaskFeedback.update { task_definition_id: task.definition.id, project_id: task.project().project_id },
       (value) ->  #success
         if value.result == "false"
@@ -326,22 +448,56 @@ angular.module("doubtfire.common.services.tasks", [])
           task.processing_pdf = true
           alertService.add("info", "Task PDF will be recreated.", 2000)
           analyticsService.event 'Task Service', 'Recreated PDF'
-
-          if success
-            success()
+          onSuccess?()
       (value) -> #fail
         alertService.add("danger", "Request failed, cannot recreate PDF at this time.", 2000)
         analyticsService.event 'Task Service', 'Failed to Recreate PDF'
+        onFailure?()
 
   taskService.taskIsGraded = (task) ->
     task? and task.definition.is_graded and task.grade?
 
+  taskService.taskKeyFromString = (taskKeyString) ->
+    taskKeyComponents = taskKeyString?.split('/')
+    if taskKeyComponents
+      studentId = _.first(taskKeyComponents)
+      taskDefAbbr = _.last(taskKeyComponents)
+      return unless _.isString(studentId) && _.isString(taskDefAbbr)
+    {
+      studentId: studentId
+      taskDefAbbr: taskDefAbbr
+    }
+
+  taskService.taskKeyToUrlString = (task) ->
+    key = task.taskKey()
+    "#{key.studentId}/#{key.taskDefAbbr}"
+
+  taskService.taskKeyToIdString = (task) ->
+    key = task.taskKey()
+    "task-key-#{key.studentId}-#{key.taskDefAbbr}".replace(".", "")
+
+  taskService.taskKey = (task) ->
+    {
+      studentId: task.project().student_id
+      taskDefAbbr: task.definition.abbreviation
+    }
+
+  taskService.hasTaskKey = (task, key) ->
+    _.isEqual(task?.taskKey(), key)
+
+  # Map extra front-end details to comment
+  taskService.mapComment = (comment) ->
+    initials = comment.author.name.split(" ")
+    comment.initials = ("#{initials[0][0]}#{initials[1][0]}").toUpperCase()
+    comment.author_is_me = comment.author.id == currentUser.profile.id
+    comment
+
   taskService.addComment = (task, textString, success, failure) ->
     TaskComment.create { project_id: task.project().project_id, task_definition_id: task.task_definition_id, comment: textString },
       (response) ->
-        unless task.comments
+        unless task.comments?
           task.comments = []
-        task.comments.unshift response
+        task.comments.unshift(taskService.mapComment(response))
         if success? and _.isFunction success
           success(response)
         analyticsService.event "View Task Comments", "Added new comment"

@@ -5,7 +5,7 @@ angular.module('doubtfire.projects.states.show', [])
 #
 .config((headerServiceProvider) ->
   projectsShowStateData =
-    url: "/projects/:projectId?unitRole"
+    url: "/old/projects/:projectId?unitRole"
     views:
       main:
         controller: "ProjectsShowCtrl"
@@ -13,7 +13,7 @@ angular.module('doubtfire.projects.states.show', [])
     data:
       pageTitle: "_Home_"
       roleWhitelist: ['Student', 'Tutor', 'Convenor', 'Admin']
-  headerServiceProvider.state "projects#show", projectsShowStateData
+  headerServiceProvider.state "old/projects#show", projectsShowStateData
 )
 
 .controller("ProjectsShowCtrl", ($scope, $stateParams, currentUser, UnitRole, Project, projectService, alertService, analyticsService) ->
@@ -49,7 +49,7 @@ angular.module('doubtfire.projects.states.show', [])
   #
   # Batch Discuss button
   #
-  $scope.transitionWeekEnd = () ->
+  $scope.transitionWeekEnd = ->
     # Reject if there is no project
     return unless $scope.project?
     Project.update(
@@ -57,7 +57,7 @@ angular.module('doubtfire.projects.states.show', [])
       (project) ->
         projectService.updateTaskStats($scope.project, project.stats)
         # Update the task stats
-        _.each $scope.project.tasks, (task) =>
+        _.each $scope.project.tasks, (task) ->
           task.status = _.filter(project.tasks, { task_definition_id: task.task_definition_id })[0].status
         alertService.add("success", "Status updated.", 2000)
         analyticsService.event 'Student Project View', "Transitioned Week End"

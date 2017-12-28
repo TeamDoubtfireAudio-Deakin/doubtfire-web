@@ -1,7 +1,7 @@
 <div class="panel panel-primary task-definition-editor">
   <div class="panel-heading clearfix">
     <h3 class="panel-title">
-      {{task ? (isNew ? "Create Task" : "Edit Task") : "Task Details"}}
+      {{task ? (isNew ? "Create Task" : "Editing " + task.abbreviation + " - " + task.name) : "Task Details"}}
     </h3>
   </div>
   <div class="panel-body large-notice-block" ng-hide="task" ng-hide="task">
@@ -97,6 +97,18 @@
                     </span>
                   </div>
                 </div><!--/graded-task-->
+
+                <div class="form-group" ng-required="isNew">
+                  <label class="col-sm-3 control-label">Quality Points</label>
+                  <div class="col-sm-8">
+                    <div class="btn-group">
+                      <label ng-repeat="value in allowedQualityPoints" class="btn btn-sm btn-default" ng-model="task.max_quality_pts" btn-radio="{{value}}">{{value || 'Disabled'}}</label>
+                    </div>
+                    <span class="help-block">
+                      Requires tutors to provide a quality rating based on a number of stars. The value set here determines the maximum number of stars allowed.
+                    </span>
+                  </div>
+                </div><!--/quality points-->
 
                 <div class="form-group" ng-required="isNew">
                   <label tooltip="Date students should aim to start this task." class="col-sm-3 control-label">Start Date</label>
@@ -207,7 +219,7 @@
                   <div class="col-sm-8">
                     <input type="number" ng-disabled="task.plagiarism_checks.length == 0" class="form-control" ng-model="task.plagiarism_warn_pct"/>
                     <p class="help-block">
-                      The percentage similarity where Doubtfire creates a warning
+                      The percentage similarity where {{externalName}} creates a warning
                     </p>
                   </div>
                 </div><!--/check-perecent-->
@@ -223,7 +235,7 @@
                       <option value="moss python">Python</option>
                     </select>
                     <p class="help-block">
-                      Doubtfire uses <a href="http://theory.stanford.edu/~aiken/moss/"M>Measure Of Software Similarity</a> (Moss) developed by Stanford University.
+                      {{externalName}} uses <a href="http://theory.stanford.edu/~aiken/moss/"M>Measure Of Software Similarity</a> (Moss) developed by Stanford University.
                     </p>
                   </div>
                   <button class="btn btn-danger pull-right" ng-click="removeCheck(check)">

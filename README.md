@@ -51,11 +51,25 @@ If using `rbenv`, rehash to ensure each of the gems are on your `PATH`:
 $ rbenv rehash
 ```
 
+Comply with [DSTIL](https://github.com/dstil) best practices using DSTIL's [dotfiles](https://github.com/dstil/dotfiles) repo. Run the following command to install DSTIL's dotfiles.
+
+```
+$ curl -s https://raw.githubusercontent.com/dstil/dotfiles/master/bootstrap | bash
+```
+
+Restart your terminal so that you can run `dstil`:
+
+```
+$ exec $SHELL
+$ which dstil
+dstil: aliased to /Users/Fred/.dstil/current/sources/1/files/labcheck
+```
+
 Install and sign the git hooks using `overcommit`:
 
 ```
 $ overcommit --install
-$ overcommit --sign
+$ dstil --sign
 ```
 
 Install all node dependencies using `npm`, as well as [grunt-cli](http://gruntjs.com/using-the-cli) and [bower](http://bower.io) globally:
@@ -76,10 +90,25 @@ $ bower install
 Lastly, to compile and run a watch server and web server, use `grunt`:
 
 ```
-$ grunt watchsvr
+$ grunt
 ```
 
-You can then navigate to the Doubtfire web interface at **http://localhost:8000**
+You can then navigate to the Doubtfire web interface at **http://localhost:8000**.
+
+To compile the front-end, ensure `doubtfire-api` is placed as a sibling directory to `doubtfire-web`, then run:
+
+```
+$ cd /path/to/repos
+$ ls
+doubtfire-api    doubtfire-web
+$ cd ./doubtfire-api
+$ grunt deploy
+```
+
+You may prefix this command with the following environment variables:
+
+* `DF_API_URL` - the URL of the API (e.g., `https://doubtfire.com/api`). This will default to `window.location.host` if not set and dynamically generate a URL.
+* `DF_EXTERNAL_NAME` - a new name that removes references to the _Doubtfire_ name should you so want to not use such its original name (😢).
 
 ## Resources
 
@@ -89,7 +118,7 @@ Doubtfire Web is an [Angular](http://angularjs.org) application built using [Boo
 - [Moment.js](http://momentjs.com)
 - [Font Awesome](http://fontawesome.io)
 - [UI Router](https://github.com/angular-ui/ui-router)
-- [UI Bootstrap](http://angular-ui.github.io/bootstrap/)
+- [UI Bootstrap](http://angular-ui.github.io/bootstrap/versioned-docs/0.13.4/)
 - [UI Select](https://github.com/angular-ui/ui-select)
 - [NVD3 Charts](http://krispo.github.io/angular-nvd3/#/)
 - [Angular X-Editable](http://vitalets.github.io/angular-xeditable/)

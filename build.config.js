@@ -22,7 +22,7 @@ module.exports = {
    */
   preprocess: {
     api: {
-      src: ['build/src/app/api/api-url.js'],
+      src: ['build/src/app/api/api-url.js', 'build/src/app/config/external-name/external-name.js'],
       options: {
         inline: true
       }
@@ -126,7 +126,8 @@ module.exports = {
         'vendor/angular-markdown-filter/markdown.js',
         'vendor/angular-ui-select/dist/select.js',
         'vendor/angulartics/dist/angulartics.min.js',
-        'vendor/angulartics-google-analytics/lib/angulartics-google-analytics.js'
+        'vendor/angulartics-google-analytics/lib/angulartics-google-analytics.js',
+        'vendor/angular-md5/angular-md5.js'
       ],
       jsmap: [
         'vendor/showdown/dist/showdown.js.map'

@@ -2,7 +2,7 @@ angular.module("doubtfire.common.services.grades", [  ])
 #
 # Service for grade-related data
 #
-.factory("gradeService", () ->
+.factory("gradeService", ->
   #
   # The unit service object
   #
@@ -28,6 +28,10 @@ angular.module("doubtfire.common.services.grades", [  ])
     'Credit': 'C'
     'Distinction': 'D'
     'High Distinction': 'HD'
+    0: 'P'
+    1: 'C'
+    2: 'D'
+    3: 'HD'
 
   gradeService.gradeColors = {
     # Pass
@@ -45,7 +49,7 @@ angular.module("doubtfire.common.services.grades", [  ])
   }
 
   gradeService.gradeFor = (project) ->
-    gradeService.grades[project.target_grade]
+    gradeService.gradeNumbers[project.target_grade]
 
   gradeService
 )
